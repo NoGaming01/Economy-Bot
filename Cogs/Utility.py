@@ -1,9 +1,8 @@
 import nextcord as discord
 from nextcord.ext import commands
-import pymongo
 from datetime import datetime
 
-class Utilities(commands.Cog):
+class Utility(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -23,4 +22,4 @@ class Utilities(commands.Cog):
         await ctx.send(embed=embed)
 
 def setup(bot):
-    bot.add_cog(Utilities(bot))
+    bot.add_cog(Utility(bot))
