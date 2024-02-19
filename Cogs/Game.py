@@ -77,5 +77,50 @@ class Game(commands.Cog):
         else:
             await ctx.send(f"An error occurred: {error}")
 
+    @commands.command(name="coinflip", description="Flips a coin and you can win or lose coins.", aliases=["cf"])
+    async def coinflip(self, ctx, coins: int, heads_or_tails: str = "heads"):
+
+        if not isinstance(coins, int):
+            await ctx.send("Please enter only numbers.")
+            return
+
+        if coins <= 0:
+            await ctx.send("Please enter a positive number of coins to flip.")
+            return
+        
+        collection = db["Players"]
+        player = collection.find_one({"_id": ctx.author.id})
+        
+        if not player:
+            await ctx.send("You are not in the game. Use `tstart` to start.")
+            return
+        
+        balance = player.get("coins", 0)
+        
+        if balance < coins:
+            await ctx.send(f"You do not have enough coins. You have {balance} coins.")
+            return
+        
+        if heads_or_tails not in ["heads", "tails"]:
+            await ctx.send("Please specify 'heads' or 'tails' for the coin flip.")
+            return
+
+        result = random.choice(["heads", "tails"])
+
+        if result == heads_or_tails:
+            balance += coins
+            collection.update_one(
+                {"_id": ctx.author.id},
+                {"$set": {"coins": balance}}
+            )
+            await ctx.send(f"You flipped {heads_or_tails} and won. You now have {balance} coins.")
+        else:
+            balance -= coins
+            collection.update_one(
+                {"_id": ctx.author.id},
+                {"$set": {"coins": balance}}
+            )
+            await ctx.send(f"You flipped {heads_or_tails} and lost. You now have {balance} coins.")
+
 def setup(bot):
     bot.add_cog(Game(bot))
