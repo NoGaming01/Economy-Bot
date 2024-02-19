@@ -30,17 +30,14 @@ class Game(commands.Cog):
             collection.insert_one({
                 "_id": ctx.author.id,
                 "name": ctx.author.name,
-                "wallet": 1000,
-                "bank": 500,
+                "coins": 1000,
                 "level": 1,
                 "xp": 0,
-                "inventory": ["wooden sword"],
-                "equipped": []
             })
 
             embed = discord.Embed(
                 title="Welcome to the game!",
-                description="You have been added to the game.\nYou have received 1000 coins in your wallet and 500 coins in the bank.\nYou have also received a wooden sword in your inventory.\nYou can equip the sword by typing `tequip <id>` in the chat.\nYou can start playing by typing `thunt`, `tbattle` or `tcollect <name>`.",
+                description="You have been added to the game.\nYou have received 1000 coins.\nUse `tdaily` to claim your daily reward.\nUse `tcf <coins>` to flip a coin.",
                 color=0x00e28d
             )
             embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar)
@@ -64,19 +61,19 @@ class Game(commands.Cog):
         
         reward = random.randint(100, 1000)
 
-        wallet_balance = player.get("wallet", 0) + reward
+        balance = player.get("coins", 0) + reward
         collection.update_one(
             {"_id": ctx.author.id},
-            {"$set": {"wallet": wallet_balance}}
+            {"$set": {"coins": balance}}
         )
 
-        await ctx.send(f"You have received {reward} coins. Your wallet have {wallet_balance} coins now.")
+        await ctx.send(f"You have received {reward} coins.")
 
     @daily.error
     async def daily_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             retry_after_timestamp = int(datetime.utcnow().timestamp() + error.retry_after)
-            await ctx.send(f"This command is on cooldown. Please try again in <t:{retry_after_timestamp}:R>.")
+            await ctx.send(f"Nuh uh. Please try again in <t:{retry_after_timestamp}:R>.")
         else:
             await ctx.send(f"An error occurred: {error}")
 
