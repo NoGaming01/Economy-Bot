@@ -3,6 +3,8 @@ from nextcord.ext import commands
 import pymongo
 import os
 import dotenv
+import random
+from datetime import datetime
 
 dotenv.load_dotenv()
 uri = str(os.getenv("MONGO"))
@@ -49,6 +51,34 @@ class Game(commands.Cog):
             self.setup_complete.add(ctx.author.id)
         else:
             await ctx.send("You are already in the game.")
+
+    @commands.command(name="daily", description="Gives you your daily reward.")
+    @commands.cooldown(1, 60 * 60 * 24, commands.BucketType.user)
+    async def daily(self, ctx):
+        collection = db["Players"]
+        player = collection.find_one({"_id": ctx.author.id})
+
+        if not player:
+            await ctx.send("You are not in the game. User `tstart` to start the game.")
+            return
+        
+        reward = random.randint(100, 1000)
+
+        wallet_balance = player.get("wallet", 0) + reward
+        collection.update_one(
+            {"_id": ctx.author.id},
+            {"$set": {"wallet": wallet_balance}}
+        )
+
+        await ctx.send(f"You have received {reward} coins. Your wallet have {wallet_balance} coins now.")
+
+    @daily.error
+    async def daily_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            retry_after_timestamp = int(datetime.utcnow().timestamp() + error.retry_after)
+            await ctx.send(f"This command is on cooldown. Please try again in <t:{retry_after_timestamp}:R>.")
+        else:
+            await ctx.send(f"An error occurred: {error}")
 
 def setup(bot):
     bot.add_cog(Game(bot))
